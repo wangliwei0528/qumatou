@@ -1,0 +1,61 @@
+<style lang="less">
+  @import "./styles/base";
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+
+import { setStore } from 'wepy-redux'
+import configStore from './store'
+
+const store = configStore()
+setStore(store)
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/index',
+      'pages/login',
+      'pages/order'
+    ],
+    cloud: true,
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'black'
+    },
+    tabBar: {
+      selectedColor: '#20c299',
+      color: "#ccc",  
+      list: [{
+        pagePath: 'pages/index',
+        text: '接单',
+        iconPath: "./images/take_order_2.png",
+        selectedIconPath: './images/take_order.png',
+      }, {
+        pagePath: 'pages/order',
+        text: '订单',
+        iconPath: "./images/order_2.png",
+        selectedIconPath: './images/order.png',
+      }]
+    }
+  }
+  globalData = {
+    userInfo: null
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix')
+    this.use('promisify')
+  }
+  onLaunch() {
+    // wx.cloud.init({
+    //     traceUser: true // 用户信息会显示在云开发控制台的用户面板中
+    // });
+    
+  }
+}
+</script>

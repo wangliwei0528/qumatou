@@ -1,0 +1,154 @@
+<style lang="less">
+    page,.container,.login_background_img{
+      width:100%;
+      height:100%;
+    }
+    .login_background_img{
+      background:url('http://applet.qumatou.com.cn/static/riderDeliver/login_background.png') no-repeat;
+      padding-top:180rpx;
+    }
+    .phone_code{
+      width: 640rpx;
+      height: 98rpx;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 48rpx;
+      opacity: 0.8;
+      color:#fff;
+      font-size:30rpx;
+      display:flex;
+      padding-left:40rpx;
+      margin:0rpx auto 60rpx;
+      view:first-child{
+        height:100%;
+        line-height:98rpx;
+        margin-right:30rpx;
+      }
+      input{
+        width:270rpx;
+        height:100%;
+      }
+      .get_code{
+        width: 180rpx;
+        height: 98rpx;
+        background-color: #ffffff;
+        border-radius: 0rpx 49rpx 49rpx 0rpx;
+        color: #20c299;
+        font-size:28rpx;
+        line-height:98rpx;
+        text-align:center;
+      }
+    }
+    .login_btn{
+      color: #20c299;
+      background-color: #fff;
+      line-height:98rpx;
+      padding-left:0;
+      text-align: center;
+      display:block;
+      margin-top: 130rpx;
+    }
+    .agreement{
+      font-size: 26rpx;
+      color:#fff;
+      text-align:center;
+      margin-top:-40rpx;
+    }
+</style>
+<template>
+  <view class="container">
+      <view class="login_background_img">
+        <view class="phone_code">
+          <view>手机号码</view>
+          <input style="color:#fff;" placeholder="请输入手机号" @input="getPhoneNum" placeholder-style='color:#fff;'/>
+          <view class="get_code" wx:if="{{!countDown}}" @tap.stop="getCode">获取验证码</view>
+          <view class="get_code" wx:if="{{countDown}}" @tap.stop="getCode">{{wxTimerList['wxTimer1'].wxTimerSecond}}秒</view>
+        </view>
+        <view class="phone_code">
+          <view>验证码</view>
+          <input style="color:#fff;" placeholder="请输入验证码" placeholder-style='color:#fff;' @input="getInputCode"/>
+        </view>
+        <view class="phone_code login_btn" @tap.stop="loginEvent">登录</view>
+        <view class="agreement">* 登录即表示您同意《用户协议》</view>
+      </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import util from '../utils/util'
+  import api from '../api/api'
+  import timer from '../utils/wxTimer'
+  export default class Login extends wepy.page {
+    config = {
+      navigationBarTitleText: '登录',
+      navigationBarBackgroundColor: '#4abc68',
+      navigationBarTextStyle: '#fff'
+    }
+    data = {
+      wxTimerList:{},
+      wxTimer1:'',
+      countDown:false,
+      phoneNum:0,
+      inputCode:0,
+      is_true_phone_num:'',
+    }
+    methods = {
+      getPhoneNum(e){    //获取用户输入的手机号码
+        this.phoneNum = e.detail.value;
+        this.is_true_phone_num = util.vailPhone(e.detail.value)
+      },
+      getInputCode(e){    //获取验证码
+        this.inputCode = e.detail.value;
+      },
+      getCode(){         //获取验证码
+        if(this.is_true_phone_num) {
+          const data = {
+            "mobile":this.phoneNum
+          }
+          util.post(api.fixCode,data).then((res)=>{
+            if(res.status == 1){
+              util.toast(res.message)
+              this.countDown = true;
+              this.wxTimer1 = new timer({
+                beginTime:'00:00:59',
+                name:'wxTimer1',
+                complete:(res=>{
+                    this.countDown = !this.countDown;
+                    this.$apply();
+                    this.wxTimer1.stop(this);
+                })
+              })
+              this.wxTimer1.start(this);
+              this.$apply();
+            }else{
+              util.toast(res.message)
+            }
+          })
+        }else{
+          util.toast('请输入正确的手机号码')
+        }
+      },
+      loginEvent(){       //登录
+        if(this.inputCode){
+          //验证是否填写了验证码
+          const data = {
+            mobile:this.phoneNum,
+            sms:this.inputCode
+          }
+          util.post(api.login,data).then(res=>{
+            if(res.status == 1){
+              util.toast('登录成功','success');
+              util.toPages('sT','./index')
+              util.set('loginInfo',res)
+            }else{
+              util.toast(res.message)
+            }
+          })
+        }else{
+          //无验证码
+          util.toast('请输入验证码')
+        }
+      }
+    }
+  }
+</script>

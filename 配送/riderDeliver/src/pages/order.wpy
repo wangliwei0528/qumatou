@@ -1,0 +1,292 @@
+<style lang="less">
+    page{
+        width:100%;
+        height:100%;
+        background-color:#efeff4;
+    }
+    //订单
+    .tab_btn_wrap{
+        width:100%;
+        height:110rpx;
+        display:flex;
+        background-color:#4abc68;
+        color:#fff;
+        position:absolute;
+        top:0;
+        z-index:100;
+        view{
+            flex:1;
+            text-align:center;
+            padding-top:16rpx;
+            position:relative;
+        }
+        .triangle_border_up::after{
+            content:'';
+            width:0;
+            height:0;
+            border-width:0 24rpx 24rpx;
+            border-style:solid;
+            border-color:transparent transparent #fff;/*透明 透明  灰*/
+            margin:40rpx auto;
+            position:absolute;
+            bottom:16rpx;
+            left:0;
+            right:0;
+            margin:0 auto;
+        }
+    }
+    .ordertakers_wrap{
+        width:710rpx;
+        margin:20rpx auto 0;
+        background-color:#fff;
+        padding:40rpx 30rpx 30rpx;
+        .flex{
+            display:flex;
+            margin-top:16rpx;
+            font-size:28rpx;
+            position:relative;
+            .phone_btn{
+                width:51rpx;
+                height:51rpx;
+                position:absolute;
+                right:0;
+                top:0;
+            }
+        }
+        .order_serial{
+            justify-content: space-between;
+            font-size:26rpx;
+            color: #fb5557;
+            margin-bottom:30rpx;
+        }
+    }
+    .take_orders{
+        width: 240rpx;
+        height: 67rpx;
+        background-color: #20c299;
+        border-radius: 6rpx;
+        line-height:67rpx;
+        text-align:center;
+        color:#fff;
+        margin:0 auto;
+    }
+    //商品信息
+    .goods_info_wrap{
+        height:73rpx;
+        display:flex;
+        font-size:28rpx;
+        color: #666666;
+        justify-content:space-between;
+        line-height:73rpx;
+        margin-top:16rpx;
+        image{
+            width:70rpx;
+            height:70rpx;
+        }
+    }
+    .no_order{
+        font-size:28rpx;
+        text-align:center;
+        margin-top:550rpx;
+    }
+</style>
+<template>
+    <view class="container" style="height:100%;">
+        <view class="tab_btn_wrap">
+            <view class="{{tab == index ? 'triangle_border_up' : ''}}" wx:for="{{tabs}}" wx:key="index" @tap.stop="changeTabs">{{item}}</view>
+        </view>
+        <!-- 正在配送订单 -->
+        <view wx:if="{{deliverOrder}}" style="height:100%;overflow:auto;padding-top:110rpx;">
+            <!-- 订单信息 -->
+            <view class="ordertakers_wrap" wx:for="{{list}}" wx:key="index">
+                <view class="flex order_serial">
+                    <view>订单编号:{{item.serial}}</view>
+                    <view style="font-weight:bold;">距离:{{item.distance}}</view>
+                </view>
+                <view class="flex">
+                    <view>商家名称：</view>
+                    <view style="font-weight:bold;">{{item.merchants.title}}</view>
+                </view>
+                <view class="flex">
+                    <view>商家地址：</view>
+                    <view style="width:448rpx;font-weight:bold;">{{item.merchants.address}}</view>
+                </view>
+                <!-- 商品信息 -->
+                <view style="margin-top:30rpx;">商品信息</view>
+                <view class="line"></view>
+                <view class="goods_info_wrap" wx:for="{{item.takeaways}}" wx:key="index" wx:for-item="item1">
+                    <image src="{{item1.cover}}"/>
+                    <view style="width:180rpx;margin-left:-100rpx;overflow:hidden;">{{item1.title}}</view>
+                    <view>x {{item1.qty}}</view>
+                    <view>￥ {{item1.price/100}}</view>
+                </view>
+                <!-- 收货人的信息 -->
+                <view style="margin-top:30rpx;">收货人信息</view>
+                <view class="line"></view>
+                <view class="flex">
+                    <view>收货人姓名：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.truename}}</view>
+                </view>
+                <view class="flex">
+                    <view>收货人电话：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.mobile}}</view>
+                    <image src="../images/call.png" class="phone_btn" @tap.stop="callSomebody({{item.mobile}})"/>
+                </view>
+                <view class="flex">
+                    <view>收货人地址：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.address}}</view>
+                </view>
+                <!-- 配送费 -->
+                <view class="flex" style="color: #fb5557;margin:28rpx 0;">
+                    <view>配送费：</view>
+                    <view style="font-weight:bold;">{{item.send_price/100}}元</view>
+                </view>
+                <!-- 立即接单 -->
+                <view class="flex order_serial" style="margin-bottom:0;">
+                    <view class="take_orders" @tap.stop="deliverDone({{item.id}})">配送完成</view>
+                </view>
+            </view>
+            <view class="no_order" wx:if="{{list.length == 0}}">暂无正在配送订单</view>
+        </view>
+        <!-- 历史订单 -->
+        <view wx:if="{{deliverOrder1}}" style="height:100%;overflow:auto;padding-top:110rpx;">
+            <!-- 订单信息 -->
+            <view class="ordertakers_wrap" wx:for="{{list}}" wx:key="index" style="padding-bottom:10rpx;">
+                <view class="flex order_serial" >
+                    <view>订单编号:{{item.serial}}</view>
+                    <view style="font-weight:bold;">距离:{{item.distance}}</view>
+                </view>
+                <view class="flex">
+                    <view>商家名称：</view>
+                    <view style="font-weight:bold;">{{item.merchants.title}}</view>
+                </view>
+                <view class="flex">
+                    <view>商家地址：</view>
+                    <view style="width:448rpx;font-weight:bold;">{{item.merchants.address}}</view>
+                </view>
+                <!-- 商品信息 -->
+                <view style="margin-top:30rpx;">商品信息</view>
+                <view class="line"></view>
+                <view class="goods_info_wrap" wx:for="{{item.takeaways}}" wx:key="index" wx:for-item="item1">
+                    <image src="{{item1.cover}}"/>
+                    <view style="width:180rpx;margin-left:-100rpx;overflow:hidden;">{{item1.title}}</view>
+                    <view>x {{item1.qty}}</view>
+                    <view>￥ {{item1.price/100}}</view>
+                </view>
+                <!-- 收货人的信息 -->
+                <view style="margin-top:30rpx;">收货人信息</view>
+                <view class="line"></view>
+                <view class="flex">
+                    <view>收货人姓名：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.truename}}</view>
+                </view>
+                <view class="flex">
+                    <view>收货人电话：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.mobile}}</view>
+                    <image src="../images/call.png" class="phone_btn" @tap.stop="callSomebody({{item.mobile}})"/>
+                </view>
+                <view class="flex">
+                    <view>收货人地址：</view>
+                    <view style="width:404rpx;font-weight:bold;">{{item.address}}</view>
+                </view>
+                <!-- 配送费 -->
+                <view class="flex" style="color: #fb5557;margin:28rpx 0;">
+                    <view>配送费：</view>
+                    <view style="font-weight:bold;">{{item.send_price/100}}元</view>
+                </view>
+                <!-- <view class="flex" style="color: #fb5557;margin:28rpx 0;">
+                    <view>订单开始时间：</view>
+                    <view style="font-weight:bold;">2018-10-26 15:29:32</view>
+                </view>
+                <view class="flex" style="color: #fb5557;margin:28rpx 0;">
+                    <view>订单结束时间：</view>
+                    <view style="font-weight:bold;">2018-10-26 15:29:32</view>
+                </view> -->
+            </view>
+            <view class="no_order" wx:if="{{list.length == 0}}">暂无历史订单</view>
+        </view>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import app from '../utils/app'
+  import api from '../api/api'
+  import util from '../utils/util'
+  export default class Order extends wepy.page {
+    config = {
+        navigationBarTitleText: '订单',
+        navigationBarBackgroundColor: '#4abc68',
+        navigationBarTextStyle: '#fff'
+    }
+    data = {
+        tabs: ['配送订单', '历史订单'], 
+        tab:0,
+        deliverOrder:true,
+        deliverOrder1:false,
+        list:[],
+        lat:'',
+        lng:'',
+    }
+    methods = {
+        //切换tab
+        changeTabs(){
+            this.tab = !this.tab;
+            if(this.tab){
+                this.orderList(4);
+            }else{
+                this.orderList(2);
+            }
+            this.deliverOrder = !this.deliverOrder;
+            this.deliverOrder1 = !this.deliverOrder1;
+        },
+        //配送完成
+        deliverDone(id){
+            let data = {order_id:id,status:4};
+            util.post(api.getOrder,data,1).then(res=>{
+                if(res.status == 1){
+                    util.toast(res.message)
+                    this.orderList();
+                }else{
+                    util.toast(res.message)
+                }
+                this.$apply();
+            })
+        },
+        //联系客户
+        callSomebody(phoneNum){
+            wx.makePhoneCall({
+                phoneNumber: phoneNum,
+                success: ()=>{}
+            });
+        }
+    }
+    //获取可接单列表
+    orderList(status){
+        let data = {page:1,status:status,lat:this.lat,lng:this.lng}
+        util.get(api.takeOrder,data,1).then(res=>{
+            this.list = res.data;
+            if(res.message){
+                util.toast('success',res.message);
+            }
+            wx.stopPullDownRefresh();
+            this.$apply();
+        })
+    }
+    onShow(){
+        //onShow中获取骑手的定位，只要执行onShow就会重新获取骑手的经纬度，即能获取骑手到商家的距离
+        wx.getLocation({
+            type: 'wgs84',
+            success:(res=>{
+                this.lng = res.longitude;
+                this.lat = res.latitude;
+                if(this.lng&&this.lat){
+                    this.orderList(2);
+                }
+                this.$apply();
+            }),
+            fail:(res=>{})
+        })
+    }
+  }
+</script>

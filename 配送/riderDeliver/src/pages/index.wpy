@@ -1,0 +1,197 @@
+<style lang="less">
+    page,.container{
+        width:100%;
+        height:100%;
+        background-color:#efeff4;
+        .ordertakers_wrap{
+            width:710rpx;
+            margin:20rpx auto 0;
+            background-color:#fff;
+            padding:40rpx 30rpx;
+            .flex{
+                display:flex;
+                margin-top:16rpx;
+                font-size:28rpx;
+                position:relative;
+                .phone_btn{
+                    width:51rpx;
+                    height:51rpx;
+                    position:absolute;
+                    // background-color:red;
+                    right:0;
+                    top:0;
+                }
+            }
+            .order_serial{
+                justify-content: space-between;
+                font-size:26rpx;
+                color: #fb5557;
+                margin-bottom:30rpx;
+            }
+        }
+    }
+    .take_orders{
+        width: 172rpx;
+        height: 67rpx;
+        background-color: #20c299;
+        border-radius: 6rpx;
+        line-height:67rpx;
+        text-align:center;
+        color:#fff;
+    }
+    .no_order{
+        font-size:28rpx;
+        text-align:center;
+        margin-top:550rpx;
+    }
+    //数据未请求成功时的白色遮罩
+    .cover_mask{
+        width:100%;
+        height:100%;
+        background-color:rgba(255, 255, 255, .8);
+        position:absolute;
+        left:0;
+        top:0;
+        z-index:2;
+    }
+    .no_data{
+        text-align:center;
+        color:#969696;
+        font-size:26rpx;
+        padding:16rpx 0;
+        box-sizing:border-box;
+    }
+</style>
+<template>
+    <view class="container" style="position:relative;border-top:1rpx solid #efeff4;">
+        <view class="ordertakers_wrap" wx:for="{{list}}" wx:key="index">
+            <view class="flex order_serial">
+                <view>订单编号:{{item.serial}}</view>
+                <view style="font-weight:bold;">距离:{{item.distance}}</view>
+            </view>
+            <view class="flex">
+                <view>商家名称：</view>
+                <view style="font-weight:bold;">{{item.merchants.title}}</view>
+            </view>
+            <view class="flex">
+                <view>商家地址：</view>
+                <view style="width:448rpx;font-weight:bold;">{{item.merchants.address}}</view>
+            </view>
+            <view style="margin-top:30rpx;">收货人信息</view>
+            <view class="line"></view>
+            <view class="flex">
+                <view>收货人姓名：</view>
+                <view style="width:404rpx;font-weight:bold;">{{item.truename}}</view>
+            </view>
+            <view class="flex">
+                <view>收货人电话：</view>
+                <view style="width:404rpx;font-weight:bold;">{{item.mobile}}</view>
+                <image src="../images/call.png" class="phone_btn" @tap.stop="callSomebody({{item.mobile}})"/>
+            </view>
+            <view class="flex">
+                <view>收货人地址：</view>
+                <view style="width:404rpx;font-weight:bold;">{{item.address}}</view>
+            </view>
+            <!-- 配送费 -->
+            <view class="flex" style="color: #fb5557;margin:28rpx 0;">
+                <view>配送费：</view>
+                <view style="font-weight:bold;">{{item.send_price/100}}元</view>
+            </view>
+            <!-- 立即接单 -->
+            <view class="flex order_serial" style="margin-bottom:0;">
+                <view style="line-height:67rpx;color:#666666;">{{item.dateline}}</view>
+                <view class="take_orders" @tap.stop="getOrders({{item.id}})">立即接单</view>
+            </view>
+        </view>
+        <view class="no_order" wx:if="{{list.length == 0}}">暂无订单</view>
+        <view class="cover_mask" wx:if="{{is_cover_show}}"></view>
+        <view class="no_data">{{moreData}}</view>
+    </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import app from '../utils/app'
+  import api from '../api/api'
+  import util from '../utils/util'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '首页',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTextStyle: 'black',
+      enablePullDownRefresh:true
+    }
+    data = {
+        list:[],
+        lat:'',
+        lng:'',
+        is_cover_show:true,
+        page:1,
+        moreData:'上拉加载数据'
+    }
+    methods = {
+        //接单
+        getOrders(id){
+            let data = {order_id:id,status:2};
+            util.post(api.getOrder,data,1).then(res=>{
+                if(res.status == 1){
+                    util.toast(res.message)
+                    this.orderList();
+                }else{
+                    util.toast(res.message)
+                }
+                this.$apply();
+            })
+        },
+        //联系客户
+        callSomebody(phoneNum){
+            wx.makePhoneCall({
+                phoneNumber: phoneNum,
+                success: ()=>{}
+            });
+        }
+    }
+    onLoad(){}
+    //下啦刷新
+    onPullDownRefresh(){
+        this.orderList();
+    }
+    //触底事件
+    onReachBottom(){
+        this.page++
+        this.orderList()
+    }
+    //获取可接单列表
+    orderList(){
+        let data = {page:this.page,status:1,lat:this.lat,lng:this.lng}
+        util.get(api.takeOrder,data,1).then(res=>{
+            this.is_cover_show = false;
+            if(res.data.length){
+                res.data.forEach((item,index)=>{
+                    this.list.push(item)
+                })
+            }else{
+                this.moreData = '暂无更多数据';
+            }
+            wx.stopPullDownRefresh();
+            this.$apply();
+        })
+    }
+    onShow(){
+        util.toast('加载中','loading')
+        app.is_login();
+        //获取骑手的经纬度
+        wx.getLocation({
+            type: 'wgs84',
+            success:(res=>{
+                this.lng = res.longitude;
+                this.lat = res.latitude;
+                if(this.lng&&this.lat){
+                    this.orderList();
+                }
+                this.$apply();
+            }),
+            fail:(res=>{})
+        })
+    }
+  }
+</script>
