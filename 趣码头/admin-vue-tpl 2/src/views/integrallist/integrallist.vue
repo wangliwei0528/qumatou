@@ -80,15 +80,15 @@
                 align='center'
                 >
               </el-table-column>
-               <!-- <el-table-column
+              <el-table-column
                 prop="details"
                 label="商品详情"
                 align='center'
-                >
+                :show-overflow-tooltip="true">
                 <template slot-scope="scope">
                   <p v-html='scope.row.details'></p>
               </template>
-              </el-table-column> -->
+              </el-table-column>
               <el-table-column
                 prop="price"
                 label="商品价格"
